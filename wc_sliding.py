@@ -53,7 +53,6 @@ def wc_on_generator(word_generator, window_size, exclude_words):
             wc[lru_item] = lru_item_count = wc.get(lru_item, 1) - 1
             if lru_item_count > 0:
                 del(wc[lru_item])
-                print("Deleted %s from cache (count went to zero)" % lru_item)
 
         # Make this more like a "view" of the generator state
 
@@ -79,6 +78,8 @@ def get_argparser():
         description="Word Count with Sliding Window (by Number of Words)")
     parser.add_argument("-w", "--window_size",
                         type=int, default=100, help="window size (in words)")
+    parser.add_argument("-v", "--view_window_size", type=int, default=1, help="only show results for every specified number of rows (based on window_size")
+
     parser.add_argument("-n", "--numlines",
                         type=int, default=10, help="maximum lines of output")
     parser.add_argument("-t", "--top",
@@ -123,15 +124,21 @@ def main():
         sys.stderr.write("\n--url or --stdin not specified (aborting)\n")
         sys.exit(1)
 
-    wc_generator = wc_on_generator(words, args.window_size, exclude_words)
+    window_size = max(1, args.window_size)
+    view_window_size = max(1, args.view_window_size)
+
+    wc_generator = wc_on_generator(words, window_size, exclude_words)
 
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
         line_counter = count()
         for wc_result in wc_generator:
-            if next(line_counter) >= args.numlines:
+            current_count = next(line_counter)
+            if current_count >= args.numlines:
                 break
+            if (current_count+1) % view_window_size != 0:
+                continue
             env = wc_result.copy()
             env['counts'] = get_top_counts(wc_result['word_counts'], args.top)
             env['noise_flag'] = "*" if wc_result['is_stop_word'] else ""

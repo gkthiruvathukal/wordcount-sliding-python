@@ -139,10 +139,12 @@ def main():
                 break
             if (current_count+1) % view_window_size != 0:
                 continue
+            view_start = max(current_count - window_size + 1, 0)
             env = wc_result.copy()
             env['counts'] = get_top_counts(wc_result['word_counts'], args.top)
             env['noise_flag'] = "*" if wc_result['is_stop_word'] else ""
-            sys.stdout.write("[%(seq)d = %(word)s%(noise_flag)s]: " % env)
+            env['view_start'] = view_start
+            sys.stdout.write("[%(view_start)d-%(seq)d = %(word)s%(noise_flag)s]: " % env)
             sys.stdout.write("%(counts)s; %(lru_word)s (dropped)\n\n" % env)
             sys.stdout.flush()
             if args.zzz:

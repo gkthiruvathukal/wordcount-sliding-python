@@ -11,6 +11,7 @@ import sys
 import time
 
 from collections import deque
+from itertools import count
 from urllib import request
 
 # Looking for a dataset?
@@ -40,23 +41,24 @@ def get_words_from_stdin():
 def wc_on_generator(word_generator, window_size):
     lru_word_cache = deque()
     wc = {}
+    counter = count()
     for word in word_generator:
         wc[word] = wc.get(word, 0) + 1
         lru_word_cache.append(word)
         if len(lru_word_cache) > window_size:
             lru_item = lru_word_cache.popleft()
             wc[lru_item] = wc.get(lru_item, 1) - 1
-        yield wc
+        yield (next(counter), word, wc)
 
 
-def show_counts(wc, top):
+def get_top_counts(wc, top):
     items = [(wc[word], word) for word in wc]
     items.sort(reverse=True)
 
     if len(items) > top:
         items = items[0:top]
 
-    return ", ".join(["%(word)s: %(count)d" % vars() for (count, word) in items])
+    return ", ".join(["%(word)s (%(count)d)" % vars() for (count, word) in items])
 
 
 def get_argparser():
@@ -100,9 +102,9 @@ def main():
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
-        for out_line_number in range(0, args.numlines):
-            sys.stdout.write("%d:\n" % out_line_number)
-            sys.stdout.write(show_counts(next(wc_generator), args.top) + '\n')
+        for (seq, word, wc) in wc_generator:
+            counts = get_top_counts(wc, args.top)
+            sys.stdout.write("[%(seq)d = %(word)s]: %(counts)s\n" % vars())
             sys.stdout.flush()
             if args.zzz:
                 time.sleep(args.zzz)

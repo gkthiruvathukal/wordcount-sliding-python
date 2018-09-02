@@ -32,6 +32,11 @@ Via URL
 ./wc_window.py --url http://www.gutenberg.org/files/1524/1524-0.txt  --head 1000 --top 8 --window_size 500 | less
 ```
 
+This is kind of fun:
+
+```
+yes a b c d e f g h i j k l m n o p q r s t u v w x y z  | ./wc_sliding.py --stdin --numlines 10000 --top 5 --window_size 500 --zzz 0.01
+```
 
 Pedagogical ideas demonsrated:
 

@@ -100,8 +100,8 @@ def main():
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
-        for window in range(0, args.numlines):
-            sys.stdout.write("%d:" % window)
+        for out_line_number in range(0, args.numlines):
+            sys.stdout.write("%d:\n" % out_line_number)
             sys.stdout.write(show_counts(next(wc_generator), args.top) + '\n')
             sys.stdout.flush()
             if args.zzz:

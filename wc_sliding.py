@@ -41,16 +41,27 @@ def get_words_from_stdin():
 def wc_on_generator(word_generator, window_size, exclude_words):
     lru_word_cache = deque()
     wc = {}
+    lru_item = None
     counter = count()
     for word in word_generator:
         # don't count any word being excluded; however, we still must cache, because it is part of the window of words
         if word.lower() not in exclude_words:
-           wc[word] = wc.get(word, 0) + 1
+            wc[word] = wc.get(word, 0) + 1
         lru_word_cache.append(word)
         if len(lru_word_cache) > window_size:
             lru_item = lru_word_cache.popleft()
-            wc[lru_item] = wc.get(lru_item, 1) - 1
-        yield (next(counter), word, word.lower() in exclude_words, wc)
+            wc[lru_item] = lru_item_count = wc.get(lru_item, 1) - 1
+            if lru_item_count > 0:
+                del(wc[lru_item])
+                print("Deleted %s from cache (count went to zero)" % lru_item)
+
+        # Make this more like a "view" of the generator state
+
+        yield {'seq': next(counter),
+               'word': word,
+               'is_stop_word': word.lower() in exclude_words,
+               'word_counts': wc,
+               'lru_word': "*" if not lru_item else lru_item}
 
 
 def get_top_counts(wc, top):
@@ -64,17 +75,19 @@ def get_top_counts(wc, top):
 
 
 def get_argparser():
-    parser = argparse.ArgumentParser(description="Word Count with Sliding Window (by Number of Words)")
+    parser = argparse.ArgumentParser(
+        description="Word Count with Sliding Window (by Number of Words)")
     parser.add_argument("-w", "--window_size",
                         type=int, default=100, help="window size (in words)")
     parser.add_argument("-n", "--numlines",
                         type=int, default=10, help="number of lines to process")
     parser.add_argument("-t", "--top",
                         type=int, default=5, help="show top ranked (number of) items")
-    parser.add_argument("-z", "--zzz", type=float, help="sleep for seconds (float allowed, e.g. 0.05) between writing output lines", default=0)
+    parser.add_argument("-z", "--zzz", type=float,
+                        help="sleep for seconds (float allowed, e.g. 0.05) between writing output lines", default=0)
 
     parser.add_argument("-s", "--stop_words",
-                       type=str, default=None, help="file containing stop words (words separated by whitespace")
+                        type=str, default=None, help="file containing stop words (words separated by whitespace")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-u", "--url",
@@ -115,10 +128,12 @@ def main():
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
-        for (seq, word, is_stop_word, wc) in wc_generator:
-            counts = get_top_counts(wc, args.top)
-            noise_flag = "*" if is_stop_word else ""
-            sys.stdout.write("[%(seq)d = %(word)s%(noise_flag)s]: %(counts)s\n" % vars())
+        for wc_result in wc_generator:
+            env = wc_result.copy()
+            env['counts'] = get_top_counts(wc_result['word_counts'], args.top)
+            env['noise_flag'] = "*" if wc_result['is_stop_word'] else ""
+            sys.stdout.write("[%(seq)d = %(word)s%(noise_flag)s]: " % env)
+            sys.stdout.write("%(counts)s; %(lru_word)s (dropped)\n\n" % env)
             sys.stdout.flush()
             if args.zzz:
                 time.sleep(args.zzz)

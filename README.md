@@ -38,6 +38,13 @@ This is kind of fun:
 yes a b c d e f g h i j k l m n o p q r s t u v w x y z  | ./wc_sliding.py --stdin --numlines 10000 --top 5 --window_size 500 --zzz 0.01
 ```
 
+Excluding stop words from a known corpus:
+
+```
+./wc_sliding.py --url http://www.gutenberg.org/files/1524/1524-0.txt  --numlines 100 --top 10 --window_size 1000 --stop_words data/stop-word-list.txt | less
+
+``` 
+
 Pedagogical ideas demonsrated:
 
 - Incremental data structure to address least-recently used words (and new worsd) within window.
@@ -50,4 +57,7 @@ Pedagogical ideas demonsrated:
 Things I still want to do:
 
 - Filter out noise words (a, and, the, etc.)
+  + found http://xpo6.com/wp-content/uploads/2015/01/stop-word-list.txt (seems like a good choice for English, anyway)
+
+
 

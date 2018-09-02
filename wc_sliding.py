@@ -38,17 +38,19 @@ def get_words_from_stdin():
             yield word
 
 
-def wc_on_generator(word_generator, window_size):
+def wc_on_generator(word_generator, window_size, exclude_words):
     lru_word_cache = deque()
     wc = {}
     counter = count()
     for word in word_generator:
-        wc[word] = wc.get(word, 0) + 1
+        # don't count any word being excluded; however, we still must cache, because it is part of the window of words
+        if word.lower() not in exclude_words:
+           wc[word] = wc.get(word, 0) + 1
         lru_word_cache.append(word)
         if len(lru_word_cache) > window_size:
             lru_item = lru_word_cache.popleft()
             wc[lru_item] = wc.get(lru_item, 1) - 1
-        yield (next(counter), word, wc)
+        yield (next(counter), word, word.lower() in exclude_words, wc)
 
 
 def get_top_counts(wc, top):
@@ -71,6 +73,9 @@ def get_argparser():
                         type=int, default=5, help="show top ranked (number of) items")
     parser.add_argument("-z", "--zzz", type=float, help="sleep for seconds (float allowed, e.g. 0.05) between writing output lines", default=0)
 
+    parser.add_argument("-s", "--stop_words",
+                       type=str, default=None, help="file containing stop words (words separated by whitespace")
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-u", "--url",
                        type=str, default=None, help="url to process")
@@ -88,6 +93,14 @@ def main():
     arg_parser = get_argparser()
     args = arg_parser.parse_args()
 
+    if args.stop_words:
+        with open(args.stop_words) as infile:
+            text = infile.read()
+            words = get_words(text)
+            exclude_words = set([word.lower() for word in words])
+    else:
+        exclude_words = set()
+
     if args.url:
         words = get_words_from_url(args.url)
     elif args.stdin:
@@ -97,14 +110,15 @@ def main():
         sys.stderr.write("\n--url or --stdin not specified (aborting)\n")
         sys.exit(1)
 
-    wc_generator = wc_on_generator(words, args.window_size)
+    wc_generator = wc_on_generator(words, args.window_size, exclude_words)
 
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
-        for (seq, word, wc) in wc_generator:
+        for (seq, word, is_stop_word, wc) in wc_generator:
             counts = get_top_counts(wc, args.top)
-            sys.stdout.write("[%(seq)d = %(word)s]: %(counts)s\n" % vars())
+            noise_flag = "*" if is_stop_word else ""
+            sys.stdout.write("[%(seq)d = %(word)s%(noise_flag)s]: %(counts)s\n" % vars())
             sys.stdout.flush()
             if args.zzz:
                 time.sleep(args.zzz)

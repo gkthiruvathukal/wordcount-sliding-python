@@ -60,7 +60,7 @@ def show_counts(wc, top):
 
 
 def get_argparser():
-    parser = argparse.ArgumentParser(description="Word Count / Sliding Stream")
+    parser = argparse.ArgumentParser(description="Word Count with Sliding Window (by Number of Words)")
     parser.add_argument("-w", "--window_size",
                         type=int, default=100, help="window size (in words)")
     parser.add_argument("-n", "--numlines",

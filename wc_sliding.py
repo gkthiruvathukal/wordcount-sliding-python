@@ -80,7 +80,7 @@ def get_argparser():
     parser.add_argument("-w", "--window_size",
                         type=int, default=100, help="window size (in words)")
     parser.add_argument("-n", "--numlines",
-                        type=int, default=10, help="number of lines to process")
+                        type=int, default=10, help="maximum lines of output")
     parser.add_argument("-t", "--top",
                         type=int, default=5, help="show top ranked (number of) items")
     parser.add_argument("-z", "--zzz", type=float,
@@ -128,7 +128,10 @@ def main():
     # This try/except is straight out of the Python docs (for output SIGPIPE)
 
     try:
+        line_counter = count()
         for wc_result in wc_generator:
+            if next(line_counter) >= args.numlines:
+                break
             env = wc_result.copy()
             env['counts'] = get_top_counts(wc_result['word_counts'], args.top)
             env['noise_flag'] = "*" if wc_result['is_stop_word'] else ""

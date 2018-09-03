@@ -80,9 +80,9 @@ def get_top_counts(wc, top):
 def get_argparser():
     parser = argparse.ArgumentParser(
         description="Word Count with Sliding Window (by Number of Words)")
-    parser.add_argument("-w", "--window_size",
+    parser.add_argument("-w", "--window-size",
                         type=int, default=100, help="window size (in words)")
-    parser.add_argument("-v", "--view_window_size", type=int, default=1, help="only show results for every specified number of rows (based on window_size")
+    parser.add_argument("-v", "--view-window-size", type=int, default=1, help="only show results for every specified number of rows (based on window-size")
 
     parser.add_argument("-n", "--numlines",
                         type=int, default=10, help="maximum lines of output")
@@ -91,7 +91,7 @@ def get_argparser():
     parser.add_argument("-z", "--zzz", type=float,
                         help="sleep for seconds (float allowed, e.g. 0.05) between writing output lines", default=0)
 
-    parser.add_argument("-s", "--stop_words",
+    parser.add_argument("-s", "--stop-words",
                         type=str, default=None, help="file containing stop words (words separated by whitespace")
 
     group = parser.add_mutually_exclusive_group()

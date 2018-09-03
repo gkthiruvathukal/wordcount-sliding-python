@@ -28,6 +28,10 @@ def get_words_from_url(url):
     text = resource.read().decode("utf-8")
     return get_words(text)
 
+def get_words_from_file(filename):
+    with open(filename) as infile:
+        text = infile.read()
+    return get_words(text)
 
 def get_words_from_stdin():
     while True:
@@ -93,6 +97,8 @@ def get_argparser():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-u", "--url",
                        type=str, default=None, help="url to process")
+    group.add_argument("-f", "--filename",
+                       type=str, default=None, help="filename to process")
     group.add_argument("-i", "--stdin", action="store_true",
                        default=False, help="get text from standard input")
     return parser
@@ -119,6 +125,8 @@ def main():
         words = get_words_from_url(args.url)
     elif args.stdin:
         words = get_words_from_stdin()
+    elif args.filename:
+        words = get_words_from_file(args.filename)
     else:
         arg_parser.print_help()
         sys.stderr.write("\n--url or --stdin not specified (aborting)\n")
